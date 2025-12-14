@@ -1,3 +1,6 @@
+# Do not track puzzle input files
+puzzle-inputs/*
+
 *.annot
 *.cmo
 *.cma

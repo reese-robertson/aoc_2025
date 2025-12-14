@@ -19,7 +19,7 @@
  (name aoc_2025)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends ocaml ppx_inline_test ppx_assert ppx_compare ounit2)
  (tags
   ("add topics" "to describe" your project)))
 
