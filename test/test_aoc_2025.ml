@@ -31,6 +31,24 @@ let tests =
             [ 50; 51; 52; 53; 54; 55 ]
             (Dial.perform_turns [ Right 1; Right 1; Right 1; Right 1; Right 1 ] 50);
           assert_equal ~printer:string_of_positions [ 50 ] (Dial.perform_turns [] 50))
+       ; ("count_passes"
+          >:: fun _ ->
+          assert_equal
+            ~printer:string_of_int
+            6
+            (Dial.count_passes
+               [ Left 68
+               ; Left 30
+               ; Right 48
+               ; Left 5
+               ; Right 60
+               ; Left 55
+               ; Left 1
+               ; Left 99
+               ; Right 14
+               ; Left 82
+               ]
+               50))
        ]
 ;;
 
