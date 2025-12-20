@@ -1,6 +1,9 @@
 # Do not track puzzle input files
 puzzle-inputs/*
 
+# OCaml dev tools' lock
+dev-tools.locks/
+
 *.annot
 *.cmo
 *.cma
