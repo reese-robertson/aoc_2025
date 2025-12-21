@@ -1,9 +1,9 @@
 (executable
  (public_name day1)
  (name day1)
- (libraries aoc_2025))
+ (libraries aoc_2025 base stdio))
 
 (executable
  (name day2)
  (public_name day2)
- (libraries aoc_2025))
+ (libraries aoc_2025 base stdio))

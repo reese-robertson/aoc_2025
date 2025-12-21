@@ -10,7 +10,7 @@ let string_of_positions =
   printer_from (Format.pp_print_list ~pp_sep:Format.pp_print_space Format.pp_print_int)
 ;;
 
-let tests =
+let dial_tests =
   "Dial Test Suite"
   >::: [ ("turn_dial"
           >:: fun _ ->
@@ -52,4 +52,4 @@ let tests =
        ]
 ;;
 
-let () = run_test_tt_main tests
+let () = run_test_tt_main dial_tests
