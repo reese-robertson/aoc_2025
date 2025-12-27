@@ -18,35 +18,52 @@ let ids_in_range id_range =
   List.rev (doit first_id [])
 ;;
 
-let pow base p =
-  let rec doit base p accum =
-    if p = 0 then accum else (doit [@tailcall]) base (p - 1) (base * accum)
-  in
-  doit base p 1
-;;
-
-let slow_log_base_10 num =
-  let rec doit num accum =
-    if num < 10 then accum else (doit [@tailcall]) (num / 10) (accum + 1)
-  in
-  doit num 0
+let split_id_into id ~n =
+  let len = String.length id in
+  match len % n with
+  | 0 ->
+    let chunk_len = len / n in
+    let rec doit start accum =
+      if start = len
+      then accum
+      else
+        (doit [@tailcall])
+          (start + chunk_len)
+          (String.sub id ~pos:start ~len:chunk_len :: accum)
+    in
+    Some (doit 0 [] |> List.rev)
+  | _ -> None
 ;;
 
 let split_id id =
-  (* Int floor of log_10 + 1 gives us the number of digits of a base 10 number. *)
-  let sig_fig = slow_log_base_10 id + 1 in
-  let shift = sig_fig / 2 in
-  let div = pow 10 shift in
-  (* Right shift the upper by dividing by some power of 10. *)
-  let l = id / div in
-  (* Isolate the lower half by modulo the same power of 10, zeroing the upper digits. *)
-  let r = id % div in
+  let len = String.length id in
+  let middle_index = len / 2 in
+  let l = String.sub id ~pos:0 ~len:middle_index in
+  let r = String.sub id ~pos:middle_index ~len:middle_index in
   l, r
 ;;
 
+(** contains_repetition returns true if the given id can be split into num_groups identical, sequential
+  groups.
+*)
+let contains_repetition id ~num_groups =
+  let groups = split_id_into id ~n:num_groups in
+  match groups with
+  | None -> false
+  | Some groups ->
+    (match groups with
+     | [] -> false
+     | head :: tail -> List.for_all tail ~f:(fun group -> String.compare group head = 0))
+;;
+
 let is_valid_id id =
-  let l, r = split_id id in
-  not (l = r)
+  let id = Int.to_string id in
+  let len = String.length id in
+  match len % 2 with
+  | 0 ->
+    let l, r = split_id id in
+    not (String.compare l r = 0)
+  | _ -> true
 ;;
 
 let sum_invalid_ids_in_range r =
@@ -64,28 +81,40 @@ let%test_unit "ids_in_range" =
   [%test_eq: int list] (ids_in_range (-2, 2)) [ -2; -1; 0; 1; 2 ]
 ;;
 
-let%test_unit "pow" =
-  [%test_eq: int] (pow 2 2) 4;
-  [%test_eq: int] (pow 5 2) 25;
-  [%test_eq: int] (pow 5 1) 5;
-  [%test_eq: int] (pow 7 0) 1;
-  [%test_eq: int] (pow 10 3) 1000
-;;
-
-let%test_unit "slow_log_base_10" =
-  [%test_eq: int] (slow_log_base_10 100) 2;
-  [%test_eq: int] (slow_log_base_10 303) 2;
-  [%test_eq: int] (slow_log_base_10 1000) 3;
-  [%test_eq: int] (slow_log_base_10 1258) 3
+let%test_unit "split_id_into" =
+  [%test_eq: string list option] (split_id_into "446446" ~n:1) (Some [ "446446" ]);
+  [%test_eq: string list option] (split_id_into "446446" ~n:2) (Some [ "446"; "446" ]);
+  [%test_eq: string list option] (split_id_into "446446" ~n:3) (Some [ "44"; "64"; "46" ]);
+  [%test_eq: string list option] (split_id_into "446446" ~n:4) None;
+  [%test_eq: string list option]
+    (split_id_into "446446" ~n:6)
+    (Some [ "4"; "4"; "6"; "4"; "4"; "6" ]);
+  [%test_eq: string list option] (split_id_into "446446" ~n:12) None;
+  [%test_eq: string list option]
+    (split_id_into "1234512345" ~n:2)
+    (Some [ "12345"; "12345" ]);
+  [%test_eq: string list option]
+    (split_id_into "1234512345" ~n:5)
+    (Some [ "12"; "34"; "51"; "23"; "45" ])
 ;;
 
 let%test_unit "split_id" =
-  [%test_eq: int * int] (split_id 22) (2, 2);
-  [%test_eq: int * int] (split_id 12341234) (1234, 1234);
-  [%test_eq: int * int] (split_id 12342341) (1234, 2341);
-  [%test_eq: int * int] (split_id 303) (30, 3);
-  [%test_eq: int * int] (split_id 1188511885) (11885, 11885);
-  [%test_eq: int * int] (split_id 446446) (446, 446)
+  [%test_eq: string * string] (split_id "22") ("2", "2");
+  [%test_eq: string * string] (split_id "12342341") ("1234", "2341");
+  [%test_eq: string * string] (split_id "1188511885") ("11885", "11885");
+  [%test_eq: string * string] (split_id "446446") ("446", "446")
+;;
+
+let%test_unit "contains_repetition" =
+  [%test_eq: bool] (contains_repetition "22" ~num_groups:1) true;
+  [%test_eq: bool] (contains_repetition "22" ~num_groups:2) true;
+  [%test_eq: bool] (contains_repetition "22" ~num_groups:3) false;
+  [%test_eq: bool] (contains_repetition "2222" ~num_groups:1) true;
+  [%test_eq: bool] (contains_repetition "2222" ~num_groups:2) true;
+  [%test_eq: bool] (contains_repetition "2222" ~num_groups:3) false;
+  [%test_eq: bool] (contains_repetition "2222" ~num_groups:4) true;
+  [%test_eq: bool] (contains_repetition "1234512345" ~num_groups:2) true;
+  [%test_eq: bool] (contains_repetition "1234512345" ~num_groups:5) false
 ;;
 
 let%test_unit "is_valid_id" =
