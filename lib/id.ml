@@ -35,14 +35,6 @@ let split_id_into id ~n =
   | _ -> None
 ;;
 
-let split_id id =
-  let len = String.length id in
-  let middle_index = len / 2 in
-  let l = String.sub id ~pos:0 ~len:middle_index in
-  let r = String.sub id ~pos:middle_index ~len:middle_index in
-  l, r
-;;
-
 (** contains_repetition returns true if the given id can be split into num_groups identical, sequential
   groups.
 *)
@@ -56,24 +48,33 @@ let contains_repetition id ~num_groups =
      | head :: tail -> List.for_all tail ~f:(fun group -> String.compare group head = 0))
 ;;
 
-let is_valid_id id =
+let is_simple_invalid_id id =
+  let id = Int.to_string id in
+  contains_repetition id ~num_groups:2
+;;
+
+let is_complex_invalid_id id =
   let id = Int.to_string id in
   let len = String.length id in
-  match len % 2 with
-  | 0 ->
-    let l, r = split_id id in
-    not (String.compare l r = 0)
-  | _ -> true
+  let rec doit num_groups is_invalid =
+    if num_groups > len || is_invalid
+    then is_invalid
+    else
+      (doit [@tailcall])
+        (num_groups + 1)
+        (contains_repetition id ~num_groups || is_invalid)
+  in
+  (* Lower bound is 2 groups, upper bound is len groups each of length 1. *)
+  doit 2 false
 ;;
 
-let sum_invalid_ids_in_range r =
-  ids_in_range r
-  |> List.filter ~f:(fun id -> not (is_valid_id id))
+let sum_invalid_ids_in_range r ~invalid_f =
+  ids_in_range r |> List.filter ~f:(fun id -> invalid_f id) |> List.fold ~init:0 ~f:( + )
+;;
+
+let sum_invalid_ids_in_ranges id_ranges ~invalid_f =
+  List.map id_ranges ~f:(sum_invalid_ids_in_range ~invalid_f)
   |> List.fold ~init:0 ~f:( + )
-;;
-
-let sum_invalid_ids_in_ranges id_ranges =
-  List.map id_ranges ~f:sum_invalid_ids_in_range |> List.fold ~init:0 ~f:( + )
 ;;
 
 let%test_unit "ids_in_range" =
@@ -82,6 +83,7 @@ let%test_unit "ids_in_range" =
 ;;
 
 let%test_unit "split_id_into" =
+  [%test_eq: string list option] (split_id_into "303" ~n:2) None;
   [%test_eq: string list option] (split_id_into "446446" ~n:1) (Some [ "446446" ]);
   [%test_eq: string list option] (split_id_into "446446" ~n:2) (Some [ "446"; "446" ]);
   [%test_eq: string list option] (split_id_into "446446" ~n:3) (Some [ "44"; "64"; "46" ]);
@@ -98,13 +100,6 @@ let%test_unit "split_id_into" =
     (Some [ "12"; "34"; "51"; "23"; "45" ])
 ;;
 
-let%test_unit "split_id" =
-  [%test_eq: string * string] (split_id "22") ("2", "2");
-  [%test_eq: string * string] (split_id "12342341") ("1234", "2341");
-  [%test_eq: string * string] (split_id "1188511885") ("11885", "11885");
-  [%test_eq: string * string] (split_id "446446") ("446", "446")
-;;
-
 let%test_unit "contains_repetition" =
   [%test_eq: bool] (contains_repetition "22" ~num_groups:1) true;
   [%test_eq: bool] (contains_repetition "22" ~num_groups:2) true;
@@ -117,17 +112,28 @@ let%test_unit "contains_repetition" =
   [%test_eq: bool] (contains_repetition "1234512345" ~num_groups:5) false
 ;;
 
-let%test_unit "is_valid_id" =
-  [%test_eq: bool] (is_valid_id 11) false;
-  [%test_eq: bool] (is_valid_id 12) true;
-  [%test_eq: bool] (is_valid_id 22) false;
-  [%test_eq: bool] (is_valid_id 303) true;
-  [%test_eq: bool] (is_valid_id 1188511885) false
+let%test_unit "is_simple_invalid_id" =
+  [%test_eq: bool] (is_simple_invalid_id 11) true;
+  [%test_eq: bool] (is_simple_invalid_id 12) false;
+  [%test_eq: bool] (is_simple_invalid_id 22) true;
+  [%test_eq: bool] (is_simple_invalid_id 303) false;
+  [%test_eq: bool] (is_simple_invalid_id 1188511885) true
+;;
+
+let%test_unit "is_complex_invalid_id" =
+  [%test_eq: bool] (is_complex_invalid_id 11) true;
+  [%test_eq: bool] (is_complex_invalid_id 12) false;
+  [%test_eq: bool] (is_complex_invalid_id 22) true;
+  [%test_eq: bool] (is_complex_invalid_id 99) true;
+  [%test_eq: bool] (is_complex_invalid_id 111) true;
+  [%test_eq: bool] (is_complex_invalid_id 303) false;
+  [%test_eq: bool] (is_complex_invalid_id 565656) true
 ;;
 
 let%test_unit "sum_invalid_ids_in_ranges" =
   [%test_eq: int]
     (sum_invalid_ids_in_ranges
+       ~invalid_f:is_simple_invalid_id
        [ 11, 22
        ; 95, 115
        ; 998, 1012
