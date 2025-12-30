@@ -7,3 +7,8 @@
  (name day2)
  (public_name day2)
  (libraries aoc_2025 base stdio))
+
+(executable
+ (name day3)
+ (public_name day3)
+ (libraries aoc_2025 base stdio))
