@@ -19,7 +19,16 @@
  (name aoc_2025)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml base stdio ppx_inline_test ppx_assert ppx_compare ounit2)
+ (depends
+  ocaml
+  base
+  stdio
+  ppx_assert
+  ppx_compare
+  ppx_inline_test
+  ppx_sexp_conv
+  (ocamlformat :dev)
+  (ounit2 :with-test))
  (tags
   ("add topics" "to describe" your project)))
 
