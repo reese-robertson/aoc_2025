@@ -17,7 +17,8 @@ depends: [
   "ppx_inline_test"
   "ppx_assert"
   "ppx_compare"
-  "ounit2"
+  "ocamlformat" {dev}
+  "ounit2" {with-test}
   "odoc" {with-doc}
 ]
 build: [
