@@ -60,6 +60,31 @@ let is_accessible m ~at =
   num_occupied < 4
 ;;
 
+let remove_all_accessible m =
+  List.mapi m ~f:(fun row_index row ->
+    List.mapi row ~f:(fun col_index item ->
+      match item with
+      | Empty -> Empty
+      | Paper when is_accessible m ~at:(row_index, col_index) -> Empty
+      | Paper -> Paper))
+;;
+
+let count_removed before after =
+  let zipped = Sequence.zip (Sequence.of_list before) (Sequence.of_list after) in
+  let diffs =
+    Sequence.map zipped ~f:(fun rows ->
+      let before, after = rows in
+      let zipped = Sequence.zip (Sequence.of_list before) (Sequence.of_list after) in
+      let diffs =
+        Sequence.map zipped ~f:(fun items ->
+          let before, after = items in
+          Int.abs (compare_freight before after))
+      in
+      Sequence.fold ~init:0 ~f:( + ) diffs)
+  in
+  Sequence.fold ~init:0 ~f:( + ) diffs
+;;
+
 let%test_unit "parse_freight_map" =
   [%test_eq: freight_map]
     (parse_freight_map [ "@.."; ".@." ])
@@ -99,4 +124,10 @@ let%test_unit "is_accessible" =
   [%test_eq: bool] (is_accessible _example_freight_map ~at:(0, 2)) true;
   [%test_eq: bool] (is_accessible _example_freight_map ~at:(0, 3)) true;
   [%test_eq: bool] (is_accessible _example_freight_map ~at:(1, 1)) false
+;;
+
+let%test_unit "remove_all_accessible" =
+  [%test_eq: freight option]
+    (get ~at:(0, 2) @@ remove_all_accessible _example_freight_map)
+    (Some Empty)
 ;;

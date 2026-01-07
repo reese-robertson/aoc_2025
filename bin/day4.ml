@@ -17,3 +17,17 @@ let () =
   Stdio.printf "Part 1: %d" count;
   Stdio.print_endline ""
 ;;
+
+(* Part 2 *)
+let () =
+  let ic = Stdio.In_channel.create "puzzle-inputs/day4.txt" in
+  let map = In_channel.input_lines ic |> Forklift.parse_freight_map in
+  let rec doit state accum =
+    let next_state = Forklift.remove_all_accessible state in
+    let num_removed = Forklift.count_removed state next_state in
+    if num_removed = 0 then accum else (doit [@tailcall]) next_state (accum + num_removed)
+  in
+  let count = doit map 0 in
+  Stdio.printf "Part 2: %d" count;
+  Stdio.print_endline ""
+;;
