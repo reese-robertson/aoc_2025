@@ -26,6 +26,7 @@
   ppx_assert
   ppx_compare
   ppx_inline_test
+  ppx_let
   ppx_sexp_conv
   (ocamlformat :dev)
   (ounit2 :with-test))
